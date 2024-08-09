@@ -11,41 +11,15 @@ export function generateRepeatingEvents(event: Event): Event[] {
 
   const events: Event[] = [];
   let currentDate = new Date(event.date);
-
   const endDate = event.repeat.endDate ? new Date(event.repeat.endDate) : null;
 
-  // 반복 기준이 되는 스케쥴 추가
-  events.push(event);
-  // console.log(`[반복 일정추가 시작일] :${event.date}`);
-  if (!endDate) {
-    switch (event.repeat.type) {
-      case "daily":
-        currentDate.setDate(currentDate.getDate() + event.repeat.interval);
-        break;
-      case "weekly":
-        currentDate.setDate(currentDate.getDate() + event.repeat.interval * 7);
-        break;
-      case "monthly":
-        currentDate.setMonth(currentDate.getMonth() + event.repeat.interval);
-        break;
-      case "yearly":
-        currentDate.setFullYear(
-          currentDate.getFullYear() + event.repeat.interval
-        );
-        break;
-    }
-    const newEvent: Event = {
-      ...event,
-      date: currentDate.toISOString().split("T")[0],
-    };
-    events.push(newEvent);
-    return events;
-  }
+  // 반복 기준이 되는 스케줄 추가
+  events.push({ ...event });
 
-  while (currentDate < endDate) {
-    console.log(
-      `currentDate:${currentDate}, endDate:${endDate} COMPARE:${currentDate < endDate}`
-    );
+  let count = 0;
+  const maxRepeats = 4; // 최대 반복 횟수 설정
+
+  while (count < maxRepeats) {
     switch (event.repeat.type) {
       case "daily":
         currentDate.setDate(currentDate.getDate() + event.repeat.interval);
@@ -62,12 +36,19 @@ export function generateRepeatingEvents(event: Event): Event[] {
         );
         break;
     }
+
+    // endDate가 있고 currentDate가 endDate를 초과하면 반복 중단
+    if (endDate && currentDate > endDate) {
+      break;
+    }
+
     const newEvent: Event = {
       ...event,
       date: currentDate.toISOString().split("T")[0],
     };
-    console.log(`[newEvent]:${JSON.stringify(newEvent)}`);
     events.push(newEvent);
+
+    count++;
   }
 
   return events;
