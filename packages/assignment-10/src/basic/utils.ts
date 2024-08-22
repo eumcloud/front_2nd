@@ -11,20 +11,25 @@ const getTimeRange = (value: string): number[] => {
   return Array(end - start + 1)
     .fill(start)
     .map((v, k) => v + k);
-}
+};
 
-export const parseSchedule = (schedule: string) => {
-  const schedules = schedule.split('<p>');
-  return schedules.map(schedule => {
+export const parseSchedule = (
+  schedule: string | null | undefined
+): { day: string; range: number[]; room?: string }[] => {
+  if (!schedule) return [];
 
-    const reg = /^([가-힣])(\d+(~\d+)?)(.*)/;
+  const schedules = schedule.split("<p>");
+  return schedules
+    .map((scheduleItem) => {
+      const reg = /^([가-힣])(\d+(~\d+)?)(.*)/;
+      const match = scheduleItem.match(reg);
 
-    const [day] = schedule.split(/(\d+)/);
+      if (!match) return null;
 
-    const range = getTimeRange(schedule.replace(reg, "$2"));
+      const [, day, timeRange, , room] = match;
+      const range = getTimeRange(timeRange);
 
-    const room = schedule.replace(reg, "$4")?.replace(/\(|\)/g, "");
-
-    return { day, range, room };
-  });
+      return { day, range, room: room?.replace(/\(|\)/g, "") };
+    })
+    .filter(Boolean) as { day: string; range: number[]; room?: string }[];
 };
