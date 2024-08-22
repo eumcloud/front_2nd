@@ -9,6 +9,8 @@
     "start": "vite",
     "dev": "concurrently \"pnpm run server:watch\" \"pnpm run start\"",
     "test": "vitest",
+    "test:basic": "vitest src/basic",
+    "test:advanced": "vitest src/advanced",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "build": "tsc -b && vite build",
@@ -19,9 +21,9 @@
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "dayjs": "^1.11.12",
     "express": "^4.19.2",
     "framer-motion": "^11.3.2",
-    "msw": "^2.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -36,12 +38,23 @@
     "@vitejs/plugin-react-swc": "^3.5.0",
     "@vitest/coverage-v8": "^2.0.3",
     "@vitest/ui": "^1.6.0",
+    "axios": "^1.7.2",
     "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
+    "jsdom": "^24.0.0",
+    "msw": "^2.3.4",
+    "prettier": "^3.3.3",
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
     "vitest": "^2.0.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
