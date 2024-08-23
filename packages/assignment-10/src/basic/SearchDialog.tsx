@@ -100,29 +100,29 @@ const createCachedFetch = () => {
 
 const cachedFetch = createCachedFetch();
 
-const fetchMajors = () => axios.get<Lecture[]>("/schedules-majors.json");
-const fetchLiberalArts = () =>
-  axios.get<Lecture[]>("/schedules-liberal-arts.json");
+const fetchMajors = () => cachedFetch("/schedules-majors.json");
+const fetchLiberalArts = () => cachedFetch("/schedules-liberal-arts.json");
 
-const fetchAllLectures = async () => {
+export const fetchAllLectures = async () => {
   const start = performance.now();
   console.log("API 호출 시작: ", start);
 
   try {
-    // 여러 번 요청하되, 캐시를 사용하여 실제 네트워크 요청은 각 URL당 한 번만 수행됩니다.
+    /** 여러번 호출하지만 캐시를 잘 사용하는지 확인 */
     const results = await Promise.all([
-      fetchMajors(),
-      fetchLiberalArts(),
-      fetchMajors(),
-      fetchLiberalArts(),
-      fetchMajors(),
-      fetchLiberalArts(),
+      (console.log("API Call 1", performance.now()), fetchMajors()),
+      (console.log("API Call 2", performance.now()), fetchLiberalArts()),
+      (console.log("API Call 3", performance.now()), fetchMajors()),
+      (console.log("API Call 4", performance.now()), fetchLiberalArts()),
+      (console.log("API Call 5", performance.now()), fetchMajors()),
+      (console.log("API Call 6", performance.now()), fetchLiberalArts()),
     ]);
 
     const end = performance.now();
     console.log("모든 API 호출 완료 ", end);
     console.log("API 호출에 걸린 시간(ms): ", end - start);
 
+    console.log(`Data Check :${JSON.stringify(results.flat(), null, 2)}`);
     // 모든 결과를 하나의 배열로 합칩니다.
     return results.flat();
   } catch (error) {
@@ -189,35 +189,39 @@ const SearchDialog: React.FC<Props> = React.memo(({ searchInfo, onClose }) => {
 
   const filteredLectures = useMemo(() => {
     const { query = "", credits, grades, days, times, majors } = searchOptions;
-    return lectures.filter((lecture) => {
-      const matchesQuery =
-        lecture.title.toLowerCase().includes(query.toLowerCase()) ||
-        lecture.id.toLowerCase().includes(query.toLowerCase());
-      const matchesGrade =
-        grades.length === 0 || grades.includes(lecture.grade);
-      const matchesMajor =
-        majors.length === 0 || majors.includes(lecture.major);
-      const matchesCredits =
-        !credits || lecture.credits.startsWith(String(credits));
+    return lectures
+      .filter((lecture): lecture is Lecture => !!lecture && !!lecture.title) // 타입 가드 추가
+      .filter((lecture) => {
+        const matchesQuery =
+          lecture.title.toLowerCase().includes(query.toLowerCase()) ||
+          lecture.id.toLowerCase().includes(query.toLowerCase());
+        const matchesGrade =
+          grades.length === 0 || grades.includes(lecture.grade);
+        const matchesMajor =
+          majors.length === 0 || majors.includes(lecture.major);
+        const matchesCredits =
+          credits === undefined || Number(lecture.credits) === credits;
 
-      const schedules = parseSchedule(lecture.schedule);
-      const matchesDays =
-        days.length === 0 || schedules.some((s) => s && days.includes(s.day));
-      const matchesTimes =
-        times.length === 0 ||
-        schedules.some(
-          (s) => s && s.range.some((time) => times.includes(time))
+        const schedules = lecture.schedule
+          ? parseSchedule(lecture.schedule)
+          : [];
+        const matchesDays =
+          days.length === 0 || schedules.some((s) => s && days.includes(s.day));
+        const matchesTimes =
+          times.length === 0 ||
+          schedules.some(
+            (s) => s && s.range.some((time) => times.includes(time))
+          );
+
+        return (
+          matchesQuery &&
+          matchesGrade &&
+          matchesMajor &&
+          matchesCredits &&
+          matchesDays &&
+          matchesTimes
         );
-
-      return (
-        matchesQuery &&
-        matchesGrade &&
-        matchesMajor &&
-        matchesCredits &&
-        matchesDays &&
-        matchesTimes
-      );
-    });
+      });
   }, [lectures, searchOptions]);
 
   const visibleLectures = useMemo(() => {
@@ -260,14 +264,14 @@ const SearchDialog: React.FC<Props> = React.memo(({ searchInfo, onClose }) => {
 
   useEffect(() => {
     const fetchLectures = async () => {
-      const start = performance.now();
-      console.log("API 호출 시작: ", start);
-      fetchAllLectures().then((results) => {
-        const end = performance.now();
-        console.log("모든 API 호출 완료 ", end);
-        console.log("API 호출에 걸린 시간(ms): ", end - start);
-        setLectures(results.flatMap((result) => result.data));
-      });
+      try {
+        const results = await fetchAllLectures();
+        setLectures(results);
+      } catch (error) {
+        console.log();
+        console.error("API 호출 중 오류 발생:", error);
+        setLectures([]); // 오류 발생 시 빈 배열로 초기화
+      }
     };
     fetchLectures();
   }, []);
